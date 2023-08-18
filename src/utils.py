@@ -31,12 +31,15 @@ SHORT_OPTIONS = "dhis"
 
 
 def print_debug_important(pattern: str, message: str):
-    """Print initial debug message if DEBUG is set on True
+    """
+    Print initial debug message if DEBUG is set on True
 
-    :param pattern: Character with which a line will be printed
-    :type pattern : str
-    :param message: Message which should be printed in the middle of lines
-    :type message : str
+    Parameters
+    ----------
+    pattern : str
+        Pattern to be printed multiple times in fornt of and after message
+    message : str
+        Message to be printed out
     """
     if DEBUG:
         # Print stripe for better distinguishing
@@ -49,51 +52,72 @@ def print_debug_important(pattern: str, message: str):
 
 
 def print_debug(message: str):
-    """Print formatted debug message
+    """
+    Print formatted debug message
 
-    :param message: Message to be printed
-    :type message : str
+    Parameters
+    ----------
+    message : str
+        Message to be printed out
     """
     if DEBUG:
         print("DEBUG: " + message)
 
 
-def end():  # Function is used for not repeating patterns in code
-    """Print formatted debug message and exit script
+def end(pattern: str, message: str):  # Function is used for not repeating patterns in code
     """
-    print_debug_important("=", "FINISH DEBUG")
+    Print debug message if needed and exit script
+
+    Parameters
+    ----------
+    pattern : str
+        Pattern to be printed multiple times in fornt of and after message
+    message : str
+        Message to be printed out
+    """
+    print_debug_important(pattern, message)
     sys.exit(0)
 
 
 def warning(message: str):
-    """Print formatted text as warning on stderr
+    """
+    Print formatted text as warning on stderr
 
-    :param message : Message to be printed out
-    :type message : str
+    Parameters
+    ----------
+    message : str
+        Message to be printed out
     """
     print("WARNING: " + message, file=sys.stderr)
 
 
 def error(err_num: int, message: str = ""):
-    """Print formatted text on stderr adn exit
+    """
+    Print formatted text as error on stderr and exit with err_num
 
-    :param err_num : Error number
-    :type err_num : int
-    :param message : Message to be printed out, default empty
-    :type message : str
+    Parameters
+    ----------
+    err_num : int
+        Error number
+    message : str
+        Error message
     """
     print("ERROR: " + message, file=sys.stderr)
     sys.exit(err_num)
 
 
 def video_exists(video_url: str) -> bool:
-    """Check if passed url of video exists
+    """
+    Check if passed url of video exists
 
-    :param video_url : Url of video
-    :type video_url : str
+    Parameters
+    ----------
+    video_url : str
+        Url of vide
+    Returns
+    -------
+        True if video exists, otherwise False
 
-    :rtype : bool
-    :return : If video exists
     """
     request = None
     try:
@@ -107,7 +131,8 @@ def video_exists(video_url: str) -> bool:
 
 
 def print_help():
-    """Print help message of script
+    """
+    Print help message of script
     """
     print("usage \n "
           "python3 playlist_downloader.py [youtube/playlist] [option] [arg] playlist_url\n"
@@ -127,14 +152,17 @@ def print_help():
 
 
 def parse_arguments(argv: list) -> tuple:
-    """Parse arguments and check if all passed arguments are in correct format
+    """
+    Parse arguments and check if all passed arguments are in correct format
 
+    Parameters
+    ----------
+    argv : list
+        List of arguments returned by sys.argv
 
-    :param argv : System arguments, arguments with which script was called
-    :type argv : list
-
-    :rtype : tuple
-    :return : YouTube url, list of script options
+    Returns
+    -------
+        Tuple of url and options of argument
     """
     print_debug("Parsing arguments")
 
@@ -164,21 +192,23 @@ def parse_arguments(argv: list) -> tuple:
 
 
 def check_arguments(options: list, url: str):
-    """Check if passed arguments to script are in correct format
-
-    :param options : Options of arguments
-    :type options : tuple
-    :param url : Url of YouTube playlist
-    :type url : str
     """
+    Check if passed arguments to script are in correct format
 
+    Parameters
+    ----------
+    options : list
+        List of tuples like in return getopt.getopt
+    url : str
+        Url of playlist or video
+    """
     # Store used arguments for check and hint
     used_options = set()
 
     print_debug("Checking options and arguments")
 
     # Mandatory arguments
-    if ("--playlist", "") or ("--youtube", "") in options:
+    if not (("--playlist", "") in options or ("--youtube", "") in options):
         error(INVALID_ARGUMENT_ERROR, "No mandatory argument [playlist/youtube]")
 
     for opt, arg in options:
@@ -192,9 +222,11 @@ def check_arguments(options: list, url: str):
                 error(10, "Video does not exist or no internet connection")
 
         # This is basically switch case through known options
-        if (opt == "-h" or opt == "-d" or opt == "-s" or opt == "-i") and (len(arg) == 0):
+        if opt == "--playlist" or opt == "--youtube" and len(arg) == 0:
             pass
-        elif (opt == "--help" or opt == "--version") and (len(arg) == 0):
+        elif opt == "-h" or opt == "-d" or opt == "-s" or opt == "-i" and len(arg) == 0:
+            pass
+        elif opt == "--help" or opt == "--version" and len(arg) == 0:
             pass
         elif opt == "--resolution" and isinstance(arg, str):
 
@@ -222,13 +254,16 @@ def check_arguments(options: list, url: str):
     print_debug("Checking options and arguments OK")
 
 
-def execute(url: str, options: (str, str)):
-    """Execute script with entered options
+def execute(url: str, options: tuple):
+    """
+    Execute script with entered options
 
-    :param url : Url of YouTube playlist
-    :type url : str
-    :param options : Options of script
-    :type options : (str, str)
+    Parameters
+    ----------
+    url : str
+        Url of video or playlist
+    options : tuple
+        Options in format like return from getopt.getopt
     """
     print_debug("Executing script")
 
@@ -285,10 +320,13 @@ def execute(url: str, options: (str, str)):
 
 
 def print_playlist_info(playlist: pytube.Playlist):
-    """Print length and all resolutions of YouTube playlist
+    """
+    Print pretty playlist info
 
-    :param playlist:  playlist class
-    :type playlist : "pytube.playlist"
+    Parameters
+    ----------
+    playlist : pytube.Playlist
+        Playlist Object which inf we want o be shown
     """
     # Playlist info
     print(playlist.title)
@@ -304,12 +342,32 @@ def print_playlist_info(playlist: pytube.Playlist):
 
 
 def print_youtube_info(youtube: pytube.YouTube):
+    """
+    Print information about YouTube object
+
+    Parameters
+    ----------
+    youtube : pytube.Youtube
+        Youtube object we want to print infor about
+    """
     print(youtube.title)
     print("\tLength:\t\t" + view_length_pretty(youtube.length))
     print("\tResolution:\t" + view_resolutions_pretty(youtube.streams.filter(progressive=True).first()) + "\n")
 
 
 def view_length_pretty(length: int) -> str:
+    """
+    View passed length in nice format (Xh, Ym, Zs)
+    Parameters
+    ----------
+    length : int
+        Length in seconds
+
+    Returns
+    -------
+    str
+
+    """
     hours = length // 3600
     minutes = (length - hours * 3600) // 60
     seconds = (length - hours * 3600 - minutes * 60) % 60
@@ -318,13 +376,16 @@ def view_length_pretty(length: int) -> str:
 
 
 def view_resolutions_pretty(streams: pytube.StreamQuery) -> str:  # Help function
-    """View formatted resolutions of YouTube playlist
+    """
+    View all videos resolution in pretty format
+    Parameters
+    ----------
+    streams : pytube.StreamQuery
+        Passed StreamQuery of YouTube object
+    Returns
+    -------
+    str
 
-    :param streams : Stream queries of playlist
-    :type streams : "pytube.StreamQuery"
-
-    :return : Formatted video resolutions
-    :rtype : str
     """
     list_of_resolution = []
     for stream in streams:
@@ -334,39 +395,48 @@ def view_resolutions_pretty(streams: pytube.StreamQuery) -> str:  # Help functio
 
 def download_all(playlist: pytube.Playlist, output_dir: str = ".", resolution: str = None, only_audio: bool = True,
                  only_video: bool = False):
-    """Download all videos in YouTube playlist with entered parameters
+    """
+    Download all videos in YouTube playlist with entered parameters
 
-    :param playlist : YouTube playlist class
-    :type playlist : "pytube.Playlist"
-    :param output_dir : Name of output directory to download into
-    :type output_dir : str
-    :param resolution : Resolution in which videos should be downloaded
-    :type resolution : str
-    :param only_audio : Flag if only audio should be downloaded
-    :type only_audio : bool
-    :param only_video : Flag if only video should be downloaded
-    :type only_video : bool
+    Parameters
+    ----------
+    playlist : pytube.Playlist
+        Playlist object of Playlist
+    output_dir : str
+        Directory where all output will be stored
+    resolution : str
+        Resolution in which should be playlist downloaded
+    only_audio : bool
+        Flag if only audio should be downloaded
+    only_video : bool
+        Flag if only audio should be downloaded
+
     """
     print("Playlist:" + playlist.title)
 
     for video in playlist.videos:
-        print("Downloading " + video.title)
-
-        if resolution is None:
-            resolution = video.streams.get_highest_resolution()
-
-        videos_to_download = video.streams.filter(res=resolution, only_video=only_video,
-                                                  only_audio=only_audio).first()
-        if videos_to_download is None:
-            error(NO_VIDEO_ERROR, "Playlist or video does not exist")
-
-        videos_to_download.download(skip_existing=True, output_path=output_dir)
+        download(video, output_dir, resolution, only_audio, only_video)
     print("Done")
 
 
 def download(youtube: pytube.YouTube, output_dir: str = ".", resolution: str = None, only_audio: bool = True,
              only_video: bool = False):
-    # Todo refactor
+    """
+    Download certain YouTube video
+
+    Parameters
+    ----------
+    youtube : pytube.Youtube
+        Youtube video object to be downloaded
+    output_dir : str
+        Directory where all output should be stored
+    resolution : str
+        Resolution in which the video should be downloaded
+    only_audio : bool
+        Flag if only audio should be downloaded
+    only_video :
+        Flag if only video should be downloaded
+    """
     print("Downloading " + youtube.title)
 
     if resolution is None:
