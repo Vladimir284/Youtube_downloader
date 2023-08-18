@@ -270,10 +270,10 @@ def execute(url: str, options: tuple):
     # Options that don't need any other arguments
     if ("--help", "") in options or ("-h", "") in options:
         print_help()
-        end()
+        end("=", "DEBUG DONE")
     elif ("--version", "") in options:
         print(VERSION)
-        end()
+        end("=", "DEBUG  DONE")
 
     # Check if video exists
     if url is not None:
@@ -304,7 +304,7 @@ def execute(url: str, options: tuple):
 
         if ("-i", "") in options:
             print_playlist_info(playlist)
-            end()
+            end("=", "DEBUG  DONE")
 
         download_all(playlist, output_dir, resolution, only_audio, only_video)
     elif ("--youtube", "") in options:
@@ -312,7 +312,7 @@ def execute(url: str, options: tuple):
 
         if ("-i", "") in options:
             print_youtube_info(youtube)
-            end()
+            end("=", "DEBUG DONE")
 
         download(youtube, output_dir, resolution, only_audio, only_video)
 

@@ -10,4 +10,4 @@ if __name__ == "__main__":
     utils.execute(url, opts)
 
     print("Videos installed")
-    utils.end()
+    utils.end("=", "DEBUG  DONE")
