@@ -1,13 +1,9 @@
-from src import utils
+from sys import argv
+import src.utils
 
 # TODO do tests
 
 if __name__ == "__main__":
-    utils.print_debug_important("=", "DEBUG  INIT")
+    opts, url = src.utils.parse_arguments(argv)
 
-    url, opts = utils.parse_arguments(utils.sys.argv)
-
-    utils.execute(url, opts)
-
-    print("Videos installed")
-    utils.end("=", "DEBUG  DONE")
+    src.utils.execute(opts, url)

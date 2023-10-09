@@ -9,127 +9,11 @@ import requests
 import getopt
 import os
 import pytube
-
-DEBUG = True
-VERSION = "playlist_downloader.py v1.0.0 (c) 2023 - by Vladimir Meciar"
-
-# Possible errors number
-INVALID_ARGUMENT_ERROR = 15
-URL_ERROR = 14
-NON_EXISTING_DIRECTORY_ERROR = 13
-FORMAT_ERROR = 12
-RESOLUTION_ERROR = 11
-NO_VIDEO_ERROR = 10
-SYSTEM_ERROR = 9
-
-# Known resolutions for check
-KNOWN_RESOLUTIONS = {"144p", "240p", "360p", "480p", "720p", "1080p", "1440p", "2160p"}
-
-# Options of script
-LONG_OPTIONS = ["dir=", "resolution=", "format=", "help", "version", "playlist", "youtube"]
-SHORT_OPTIONS = "dhis"
+import src.constants as constants
+import src.my_logger as my_logger
 
 
-def print_debug_important(pattern: str, message: str):
-    """
-    Print initial debug message if DEBUG is set on True
-
-    Parameters
-    ----------
-    pattern : str
-        Pattern to be printed multiple times in fornt of and after message
-    message : str
-        Message to be printed out
-    """
-    if DEBUG:
-        # Print stripe for better distinguishing
-        for i in range(20):
-            print(pattern, end='')
-        print("  " + message + "  ", end='')
-        for i in range(20):
-            print(pattern, end='')
-        print("")
-
-
-def print_debug(message: str):
-    """
-    Print formatted debug message
-
-    Parameters
-    ----------
-    message : str
-        Message to be printed out
-    """
-    if DEBUG:
-        print("DEBUG: " + message)
-
-
-def end(pattern: str, message: str):  # Function is used for not repeating patterns in code
-    """
-    Print debug message if needed and exit script
-
-    Parameters
-    ----------
-    pattern : str
-        Pattern to be printed multiple times in fornt of and after message
-    message : str
-        Message to be printed out
-    """
-    print_debug_important(pattern, message)
-    sys.exit(0)
-
-
-def warning(message: str):
-    """
-    Print formatted text as warning on stderr
-
-    Parameters
-    ----------
-    message : str
-        Message to be printed out
-    """
-    print("WARNING: " + message, file=sys.stderr)
-
-
-def error(err_num: int, message: str = ""):
-    """
-    Print formatted text as error on stderr and exit with err_num
-
-    Parameters
-    ----------
-    err_num : int
-        Error number
-    message : str
-        Error message
-    """
-    print("ERROR: " + message, file=sys.stderr)
-    sys.exit(err_num)
-
-
-def video_exists(video_url: str) -> bool:
-    """
-    Check if passed url of video exists
-
-    Parameters
-    ----------
-    video_url : str
-        Url of vide
-    Returns
-    -------
-        True if video exists, otherwise False
-
-    """
-    request = None
-    try:
-        request = requests.get(video_url)
-    except requests.exceptions.MissingSchema:
-        error(URL_ERROR, "Url error")
-    except requests.exceptions.ConnectionError:
-        error(URL_ERROR, "No internet connection")
-
-    return not ("Video unavailable" in request.text)
-
-
+@my_logger.debug_log
 def print_help():
     """
     Print help message of script
@@ -151,6 +35,34 @@ def print_help():
           "--youtube\t\t : set script to download youtube video")
 
 
+@my_logger.debug_log
+def video_exists(video_url: str) -> bool:
+    """
+    Check if passed url of video exists
+
+    Parameters
+    ----------
+    video_url : str
+        Url of vide
+    Returns
+    -------
+        True if video exists, otherwise False
+
+    """
+    request = None
+    try:
+        request = requests.get(video_url)
+    except requests.exceptions.MissingSchema:
+        my_logger.logger.error("Url error")
+        sys.exit(constants.URL_ERROR)
+    except requests.exceptions.ConnectionError:
+        my_logger.logger.error("No internet connection")
+        sys.exit(constants.URL_ERROR)
+
+    return not ("Video unavailable" in request.text)
+
+
+@my_logger.debug_log
 def parse_arguments(argv: list) -> tuple:
     """
     Parse arguments and check if all passed arguments are in correct format
@@ -164,7 +76,7 @@ def parse_arguments(argv: list) -> tuple:
     -------
         Tuple of url and options of argument
     """
-    print_debug("Parsing arguments")
+    my_logger.logger.info("Parsing arguments...")
 
     url = None
     options = None
@@ -177,20 +89,22 @@ def parse_arguments(argv: list) -> tuple:
         arguments = argv[1:]
 
     try:
-        options, arguments = getopt.getopt(arguments, shortopts=SHORT_OPTIONS, longopts=LONG_OPTIONS)
+        options, arguments = getopt.getopt(arguments, shortopts=constants.SHORT_OPTIONS,
+                                           longopts=constants.LONG_OPTIONS)
     except getopt.GetoptError as err:
-        error(20, "Argument error " + err.msg)
+        my_logger.logger.error("Argument error: {}".format(err.msg))
+        sys.exit(constants.INVALID_ARGUMENT_ERROR)
 
     if len(arguments) != 0:
-        error(20, "Argument error Invalid arguments" + str(arguments))
-
-    print_debug("Parsing arguments OK")
+        my_logger.logger.error("Argument error, Invalid arguments : {}".format(str(arguments)))
+        sys.exit(constants.INVALID_ARGUMENT_ERROR)
 
     check_arguments(options, url)
 
-    return tuple([url, options])
+    return tuple((options, url))
 
 
+@my_logger.debug_log
 def check_arguments(options: list, url: str):
     """
     Check if passed arguments to script are in correct format
@@ -202,14 +116,10 @@ def check_arguments(options: list, url: str):
     url : str
         Url of playlist or video
     """
+    my_logger.logger.info("Checking arguments...")
+
     # Store used arguments for check and hint
     used_options = set()
-
-    print_debug("Checking options and arguments")
-
-    # Mandatory arguments
-    if not (("--playlist", "") in options or ("--youtube", "") in options):
-        error(INVALID_ARGUMENT_ERROR, "No mandatory argument [playlist/youtube]")
 
     for opt, arg in options:
 
@@ -219,7 +129,8 @@ def check_arguments(options: list, url: str):
         # Check url
         if url is not None:
             if not video_exists(url):
-                error(10, "Video does not exist or no internet connection")
+                my_logger.logger.error("Video does not exist or no internet connection")
+                sys.exit(constants.NO_VIDEO_ERROR)
 
         # This is basically switch case through known options
         if opt == "--playlist" or opt == "--youtube" and len(arg) == 0:
@@ -231,30 +142,33 @@ def check_arguments(options: list, url: str):
         elif opt == "--resolution" and isinstance(arg, str):
 
             # This construction was set here only because pyCharm has problem with not in statement
-            if arg in KNOWN_RESOLUTIONS:
+            if arg in constants.KNOWN_RESOLUTIONS:
                 pass
             else:
-                error(10, "Invalid number in argument --resolution")
+                my_logger.logger.error("Invalid number in argument --resolution: {}".format(arg))
+                sys.exit(constants.NO_VIDEO_ERROR)
 
         elif opt == "--dir" and isinstance(arg, str):
             if not os.path.isdir(arg):
-                error(15, "Non existent directory " + arg)
+                my_logger.logger.error("Non existent directory: {}".format(arg))
+                sys.exit(constants.NON_EXISTING_DIRECTORY_ERROR)
         elif opt == "--format" and isinstance(arg, str):
             if not (arg == "audio" or arg == "video"):
-                error(15, "Invalid value of format " + arg)
+                my_logger.logger.error("Invalid value of format: {}".format(arg))
+                sys.exit(constants.INVALID_ARGUMENT_ERROR)
         else:
-            error(20, "Invalid argument " + opt)
+            my_logger.logger.error("Invalid argument: {}".format(opt))
+            sys.exit(constants.INVALID_ARGUMENT_ERROR)
 
     # Warnings
     for option in used_options:
         if "--resolution" == option[0]:
             if ("--format", "audio") in used_options:
-                warning("Used --resolution while format was set on video, no videos will be exported")
-
-    print_debug("Checking options and arguments OK")
+                my_logger.logger.warning("Used --resolution while format was set on video, no videos will be exported")
 
 
-def execute(url: str, options: tuple):
+@my_logger.debug_log
+def execute(options: tuple, url: str):
     """
     Execute script with entered options
 
@@ -265,22 +179,30 @@ def execute(url: str, options: tuple):
     options : tuple
         Options in format like return from getopt.getopt
     """
-    print_debug("Executing script")
+    my_logger.logger.info("Executing script...")
 
     # Options that don't need any other arguments
     if ("--help", "") in options or ("-h", "") in options:
         print_help()
-        end("=", "DEBUG DONE")
+        sys.exit(0)
+
     elif ("--version", "") in options:
-        print(VERSION)
-        end("=", "DEBUG  DONE")
+        print(constants.VERSION)
+        sys.exit(0)
+
+        # Mandatory arguments
+    if not (("--playlist", "") in options or ("--youtube", "") in options):
+        my_logger.logger.error("No mandatory argument [playlist/youtube]")
+        sys.exit(constants.INVALID_ARGUMENT_ERROR)
 
     # Check if video exists
     if url is not None:
         if not video_exists(url):
-            error(10, "Video does not exist or no internet connection")
+            my_logger.logger.error("Video does not exist or no internet connection")
+            sys.exit(constants.NO_VIDEO_ERROR)
     else:
-        error(URL_ERROR, "No url passed as argument")
+        my_logger.logger.error("No url passed as argument")
+        sys.exit(constants.URL_ERROR)
 
     only_audio = True
     only_video = False
@@ -304,7 +226,7 @@ def execute(url: str, options: tuple):
 
         if ("-i", "") in options:
             print_playlist_info(playlist)
-            end("=", "DEBUG  DONE")
+            sys.exit(0)
 
         download_all(playlist, output_dir, resolution, only_audio, only_video)
     elif ("--youtube", "") in options:
@@ -312,11 +234,9 @@ def execute(url: str, options: tuple):
 
         if ("-i", "") in options:
             print_youtube_info(youtube)
-            end("=", "DEBUG DONE")
+            sys.exit(0)
 
         download(youtube, output_dir, resolution, only_audio, only_video)
-
-    print_debug("Executing script OK")
 
 
 def print_playlist_info(playlist: pytube.Playlist):
@@ -341,6 +261,7 @@ def print_playlist_info(playlist: pytube.Playlist):
         print_youtube_info(video)
 
 
+@my_logger.debug_log
 def print_youtube_info(youtube: pytube.YouTube):
     """
     Print information about YouTube object
@@ -348,13 +269,14 @@ def print_youtube_info(youtube: pytube.YouTube):
     Parameters
     ----------
     youtube : pytube.Youtube
-        Youtube object we want to print infor about
+        Youtube object we want to print info about
     """
     print(youtube.title)
     print("\tLength:\t\t" + view_length_pretty(youtube.length))
     print("\tResolution:\t" + view_resolutions_pretty(youtube.streams.filter(progressive=True).first()) + "\n")
 
 
+@my_logger.debug_log
 def view_length_pretty(length: int) -> str:
     """
     View passed length in nice format (Xh, Ym, Zs)
@@ -375,6 +297,7 @@ def view_length_pretty(length: int) -> str:
     return str(hours) + "hr " + str(minutes) + "min " + str(seconds) + "sec "
 
 
+@my_logger.debug_log
 def view_resolutions_pretty(streams: pytube.StreamQuery) -> str:  # Help function
     """
     View all videos resolution in pretty format
@@ -393,6 +316,7 @@ def view_resolutions_pretty(streams: pytube.StreamQuery) -> str:  # Help functio
     return str(list_of_resolution)
 
 
+@my_logger.debug_log
 def download_all(playlist: pytube.Playlist, output_dir: str = ".", resolution: str = None, only_audio: bool = True,
                  only_video: bool = False):
     """
@@ -419,6 +343,7 @@ def download_all(playlist: pytube.Playlist, output_dir: str = ".", resolution: s
     print("Done")
 
 
+@my_logger.debug_log
 def download(youtube: pytube.YouTube, output_dir: str = ".", resolution: str = None, only_audio: bool = True,
              only_video: bool = False):
     """
@@ -445,8 +370,7 @@ def download(youtube: pytube.YouTube, output_dir: str = ".", resolution: str = N
     video_to_download = youtube.streams.filter(res=resolution, only_video=only_video,
                                                only_audio=only_audio).first()
     if video_to_download is None:
-        error(NO_VIDEO_ERROR, "Video does not exist")
+        my_logger.logger.error("Video does not exist")
+        sys.exit(constants.NO_VIDEO_ERROR)
 
     video_to_download.download(skip_existing=True, output_path=output_dir)
-
-    print("Done")
