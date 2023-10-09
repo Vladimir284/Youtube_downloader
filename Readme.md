@@ -19,7 +19,7 @@ Install packages
 - --dir=[name]           : set directory for output videos (implicitly current working directory)
 - --playlist : set script download on youtube playlist
 - --resolution=[int+p]   : specify quality (pixels) in which should be playlist downloaded (max. quality implicitly)
-- --format=[audio/video] : specify format in which should be playlist downloaded (implicitly mp3)
+- --format=[audio/video] : specify format in which should be playlist downloaded (implicitly audio)
 - --help                 : print this help message and exit
 - --version              : view version of script and exit
 - --youtube : set script to download youtube video

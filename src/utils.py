@@ -21,10 +21,8 @@ def print_help():
     print("usage \n "
           "python3 playlist_downloader.py [youtube/playlist] [option] [arg] url\n"
           "--- Options and arguments ---\n"
-          # "-d\t\t : print debug information\n" # Fixme how to enable debugging from beginning
           "-h\t\t\t : print this help message and exit\n"
           "-i\t\t\t : print information about playlist and exit\n"
-          # "-s\t\t : turn off output messages and warnings\n" Fixme same here
           "--dir=[name]\t\t : set directory for output videos (implicitly current working directory)\n"
           "--playlist\t\t : set script download on youtube playlist\n"
           "--resolution=[int+p]\t : specify quality (pixels) in which should be playlist downloaded (max. quality "
